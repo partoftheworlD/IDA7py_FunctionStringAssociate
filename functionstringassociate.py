@@ -1,12 +1,13 @@
 from idc import *
 from idautils import *
-from ida_funcs import *
+from idaapi import *
 
+print "\nStringsFunctionAssociate v0.02 by partoftheworlD!\n"
 
 class StringException(Exception):
     pass
 
-class Strings:
+class Strings_fc:
     def __init__(self):
         self.string_counter = 0
         pass
@@ -25,8 +26,7 @@ class Strings:
             raise StringException()
         return str(GetString(addr, -1, type_s))
 
-    @staticmethod
-    def set_comments(xref, comment):
+    def set_comments(self, xref, comment):
         set_func_cmt(xref, "", 0)
         set_func_cmt(xref, "", 1)
         set_func_cmt(xref, comment, 1)
@@ -45,23 +45,52 @@ class Strings:
                     continue
         yield func_name, strings
 
+    def main(self):
+        try:
+            print "[+]Launching..."
+            for i in Functions():
+                for info_gen in self.get_strings_per_function(i):
+                    if info_gen[1]:
+                        self.set_comments(get_func(i), '"' + '", "'.join(string for string in info_gen[1]) + '"')
+            print "[+]Well done! Added {} strings in {} functions".format(self.string_counter, get_func_qty())
+        except KeyboardInterrupt:
+            print "[+]Ended by user"
 
-if __name__ == '__main__':
-    const_var = 60
-    try:
-        print "=" * const_var
-        print "Launching..."
-        print "=" * const_var
-        strings = Strings()
-        for functions in Functions():
-            for info_gen in strings.get_strings_per_function(functions):
-                if info_gen[1]:
-                    #print j[0], ' , '.join(strz for strz in j[1]) Debug
-                    strings.set_comments(get_func(functions), '"' + '", "'.join(string for string in info_gen[1]) + '"')
-        print "="*const_var
-        print "Well done! Added {} strings in {} functions".format(strings.string_counter, get_func_qty())
-        print "="*const_var
-    except KeyboardInterrupt:
-        print "="*const_var
-        print "Ended by user"
-        print "="*const_var
+class StringsHandler(action_handler_t):
+    def __init__(self):
+        action_handler_t.__init__(self)
+
+    def activate(self, ctx):
+        sfc = Strings_fc()
+        sfc.main()
+
+    def update(self, ctx):
+        return AST_ENABLE_ALWAYS
+
+class Strings_window(plugin_t):
+    flags = PLUGIN_FIX
+    comment = 'Associate functions'
+    help = 'https://github.com/partoftheworlD/IDA7py_FunctionStringAssociate/'
+    wanted_name = 'StringsFunctionAssociate'
+    wanted_hotkey = ""
+
+    def init(self):
+        try:
+            self._install_plugin()
+        except Exception as e:
+            form = get_current_tform()
+            pass
+        return PLUGIN_KEEP
+
+    def _install_plugin(self):
+        self.init()
+
+    def term(self):
+        pass
+
+    def run(self, arg = 0):
+        a = StringsHandler()
+        a.activate(self)
+
+def PLUGIN_ENTRY():
+    return Strings_window()
