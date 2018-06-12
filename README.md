@@ -1,6 +1,6 @@
 Install
 --------------------------------------------------------------------
-Copy the script to any folder.
+Copy functionstringassociate.py in IDA Folder/plugins
 
 How to run it
 --------------------------------------------------------------
