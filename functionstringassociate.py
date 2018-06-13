@@ -27,9 +27,12 @@ class Strings_fc:
         return str(GetString(addr, -1, type_s))
 
     def set_comments(self, xref, comment):
-        set_func_cmt(xref, "", 0)
-        set_func_cmt(xref, "", 1)
-        set_func_cmt(xref, comment, 1)
+        try:
+            set_func_cmt(xref, "", 0)
+            set_func_cmt(xref, "", 1)
+            set_func_cmt(xref, comment, 1)
+        except TypeError:
+            print "[EA Error EA = %s ] Please reload plugin via File/Script File", xref
 
     def get_strings_per_function(self, start_func):
         strings = []
