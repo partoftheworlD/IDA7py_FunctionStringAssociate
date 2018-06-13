@@ -1,11 +1,12 @@
-from idc import *
-from idautils import *
-from idaapi import *
+import idc
+import idautils
+import idaapi
 
-print "\nStringsFunctionAssociate v0.02 by partoftheworlD!\n"
+print "\nStringsFunctionAssociate v0.03 by partoftheworlD!\n"
 
 class StringException(Exception):
     pass
+
 
 class Strings_fc:
     def __init__(self):
@@ -21,57 +22,56 @@ class Strings_fc:
                     "ULEN4"]
 
     def get_string_type(self, addr):
-        type_s = GetStringType(addr)
+        type_s = idc.GetStringType(addr)
         if type_s >= len(self.string_types) or type_s < 0:
             raise StringException()
-        return str(GetString(addr, -1, type_s))
-
-    def set_comments(self, xref, comment):
-        try:
-            set_func_cmt(xref, "", 0)
-            set_func_cmt(xref, "", 1)
-            set_func_cmt(xref, comment, 1)
-        except TypeError:
-            print "[EA Error EA = %s ] Please reload plugin via File/Script File", xref
+        return str(idc.GetString(addr, -1, type_s))
 
     def get_strings_per_function(self, start_func):
         strings = []
-        end_func = FindFuncEnd(start_func)
-        func_name = get_func_name(start_func)
-        for inst_list in Heads(start_func, end_func):
-            xrefs = DataRefsFrom(inst_list)
-            for xref in xrefs:
+        end_func = idc.FindFuncEnd(start_func)
+        for inst_list in idautils.Heads(start_func, end_func):
+            xrefs = idautils.DataRefsFrom(inst_list)
+            for xref_addr in xrefs:
                 try:
-                    strings.append(self.get_string_type(xref))
+                    strings.append(self.get_string_type(xref_addr))
                     self.string_counter += 1
                 except StringException:
                     continue
-        yield func_name, strings
+
+        func_obj = idaapi.get_func(start_func)
+        idaapi.set_func_cmt(func_obj, None, 1)
+        idaapi.set_func_cmt(func_obj, None, 0)
+        string = [c for c in strings]
+        fs = ''
+        if string:
+            fs += '"' + '", "'.join(string) + '"'
+        idaapi.set_func_cmt(func_obj, str(fs), 1)
 
     def main(self):
         try:
             print "[+]Launching..."
-            for i in Functions():
-                for info_gen in self.get_strings_per_function(i):
-                    if info_gen[1]:
-                        self.set_comments(get_func(i), '"' + '", "'.join(string for string in info_gen[1]) + '"')
-            print "[+]Well done! Added {} strings in {} functions".format(self.string_counter, get_func_qty())
+            for i in idautils.Functions():
+                self.get_strings_per_function(i)
+            print "[+]Well done! Added {} strings in {} functions".format(self.string_counter, idaapi.get_func_qty())
         except KeyboardInterrupt:
             print "[+]Ended by user"
 
-class StringsHandler(action_handler_t):
+
+class StringsHandler(idaapi.action_handler_t):
     def __init__(self):
-        action_handler_t.__init__(self)
+        idaapi.action_handler_t.__init__(self)
 
     def activate(self, ctx):
         sfc = Strings_fc()
         sfc.main()
 
     def update(self, ctx):
-        return AST_ENABLE_ALWAYS
+        return idaapi.AST_ENABLE_ALWAYS
 
-class Strings_window(plugin_t):
-    flags = PLUGIN_FIX
+
+class Strings_window(idaapi.plugin_t):
+    flags = idaapi.PLUGIN_FIX
     comment = 'Associate functions'
     help = 'https://github.com/partoftheworlD/IDA7py_FunctionStringAssociate/'
     wanted_name = 'StringsFunctionAssociate'
@@ -81,9 +81,9 @@ class Strings_window(plugin_t):
         try:
             self._install_plugin()
         except Exception as e:
-            form = get_current_tform()
+            form = idaapi.get_current_tform()
             pass
-        return PLUGIN_KEEP
+        return idaapi.PLUGIN_KEEP
 
     def _install_plugin(self):
         self.init()
@@ -91,9 +91,10 @@ class Strings_window(plugin_t):
     def term(self):
         pass
 
-    def run(self, arg = 0):
+    def run(self, arg=0):
         a = StringsHandler()
         a.activate(self)
+
 
 def PLUGIN_ENTRY():
     return Strings_window()
