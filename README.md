@@ -4,7 +4,7 @@ Copy functionstringassociate.py in IDA Folder/plugins
 
 How to run it
 --------------------------------------------------------------
-When the program required for analysis is loaded, press "File->Script file" and select script
+When the program required for analysis is loaded, press "Edit/Plugins/FunctionStringAssociate"
 
 How it works
 ---------------------------------------------------------------
