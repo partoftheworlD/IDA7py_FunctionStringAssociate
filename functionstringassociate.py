@@ -2,7 +2,7 @@ import idc
 import idautils
 import idaapi
 
-print "\nStringsFunctionAssociate v0.03 by partoftheworlD!\n"
+print "\nStringsFunctionAssociate v0.04 by partoftheworlD! Last Changes <2018-06-14 20:22:12.551000>\n"
 
 class StringException(Exception):
     pass
@@ -25,37 +25,42 @@ class Strings_fc:
         type_s = idc.GetStringType(addr)
         if type_s >= len(self.string_types) or type_s < 0:
             raise StringException()
-        return str(idc.GetString(addr, -1, type_s))
+        return str(idc.GetString(addr, -1, type_s))          
 
     def get_strings_per_function(self, start_func):
         strings = []
+        fs = ''
+
+        func_obj = idaapi.get_func(start_func)    
+        idaapi.set_func_cmt(func_obj, None, 1)
+        idaapi.set_func_cmt(func_obj, None, 0)  
+
         end_func = idc.FindFuncEnd(start_func)
         for inst_list in idautils.Heads(start_func, end_func):
             xrefs = idautils.DataRefsFrom(inst_list)
             for xref_addr in xrefs:
                 try:
-                    strings.append(self.get_string_type(xref_addr))
-                    self.string_counter += 1
+                    string = self.get_string_type(xref_addr)
+                    if len(string) > 2:
+                        strings.append(string)
+                        self.string_counter += 1
+                    else:
+                        pass
                 except StringException:
                     continue
 
-        func_obj = idaapi.get_func(start_func)
-        idaapi.set_func_cmt(func_obj, None, 1)
-        idaapi.set_func_cmt(func_obj, None, 0)
-        string = [c for c in strings]
-        fs = ''
-        if string:
-            fs += '"' + '", "'.join(string) + '"'
-        idaapi.set_func_cmt(func_obj, str(fs), 1)
+        for c in strings:
+            fs += '"' + c + '" '
+            idaapi.set_func_cmt(func_obj, 'STR# {}'.format(fs), 1)
 
     def main(self):
         try:
-            print "[+]Launching..."
+            print "\n[+]Launching..."
             for i in idautils.Functions():
                 self.get_strings_per_function(i)
-            print "[+]Well done! Added {} strings in {} functions".format(self.string_counter, idaapi.get_func_qty())
+            print "\n[+]Well done! Added {} strings in {} functions".format(self.string_counter, idaapi.get_func_qty())
         except KeyboardInterrupt:
-            print "[+]Ended by user"
+            print "\n[+]Ended by user"
 
 
 class StringsHandler(idaapi.action_handler_t):
@@ -74,7 +79,7 @@ class Strings_window(idaapi.plugin_t):
     flags = idaapi.PLUGIN_FIX
     comment = 'Associate functions'
     help = 'https://github.com/partoftheworlD/IDA7py_FunctionStringAssociate/'
-    wanted_name = 'StringsFunctionAssociate'
+    wanted_name = 'Strings Function Associate'
     wanted_hotkey = ""
 
     def init(self):
