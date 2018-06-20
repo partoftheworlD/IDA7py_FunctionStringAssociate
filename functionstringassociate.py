@@ -2,7 +2,7 @@ import idc
 import idautils
 import idaapi
 
-print "\nStringsFunctionAssociate v0.04 by partoftheworlD! Last Changes <2018-06-14 20:22:12.551000>\n"
+print "StringsFunctionAssociate v0.05 by partoftheworlD! Last Changes <2018-06-20 16:25:58.039000>\n"
 
 class StringException(Exception):
     pass
@@ -11,7 +11,6 @@ class StringException(Exception):
 class Strings_fc:
     def __init__(self):
         self.string_counter = 0
-        pass
 
     string_types = ["C",
                     "Pascal",
@@ -32,11 +31,10 @@ class Strings_fc:
         fs = ''
 
         func_obj = idaapi.get_func(start_func)    
-        idaapi.set_func_cmt(func_obj, None, 1)
-        idaapi.set_func_cmt(func_obj, None, 0)  
+        idaapi.set_func_cmt(func_obj, '', 1)
+        idaapi.set_func_cmt(func_obj, '', 0)  
 
-        end_func = idc.FindFuncEnd(start_func)
-        for inst_list in idautils.Heads(start_func, end_func):
+        for inst_list in idautils.Heads(start_func, idc.FindFuncEnd(start_func)):
             xrefs = idautils.DataRefsFrom(inst_list)
             for xref_addr in xrefs:
                 try:
@@ -49,13 +47,16 @@ class Strings_fc:
                 except StringException:
                     continue
 
-        for c in strings:
-            fs += '"' + c + '" '
-            idaapi.set_func_cmt(func_obj, 'STR# {}'.format(fs), 1)
+        if strings:
+            for c in strings:
+                if '\n' in c:
+                    c = c.replace('\n', '')
+                fs += '"' + c + '" '
+            idaapi.set_func_cmt(func_obj, 'STR {}# {}'.format(len(strings), fs), 1)
 
     def main(self):
-        try:
-            print "\n[+]Launching..."
+        print "\n[+]Launching..."
+        try:            
             for i in idautils.Functions():
                 self.get_strings_per_function(i)
             print "\n[+]Well done! Added {} strings in {} functions".format(self.string_counter, idaapi.get_func_qty())
@@ -97,8 +98,8 @@ class Strings_window(idaapi.plugin_t):
         pass
 
     def run(self, arg=0):
-        a = StringsHandler()
-        a.activate(self)
+        str_Handle = StringsHandler()
+        str_Handle.activate(self)
 
 
 def PLUGIN_ENTRY():
