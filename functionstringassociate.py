@@ -2,7 +2,7 @@ import idc
 import idautils
 import idaapi
 
-print "StringsFunctionAssociate v0.05 by partoftheworlD! Last Changes <2018-06-20 16:25:58.039000>\n"
+print "\nStringsFunctionAssociate v0.06 by partoftheworlD! Last Changes <2018-08-06 02:45:56.132000>\n"
 
 class StringException(Exception):
     pass
@@ -24,35 +24,41 @@ class Strings_fc:
         type_s = idc.GetStringType(addr)
         if type_s >= len(self.string_types) or type_s < 0:
             raise StringException()
-        return str(idc.GetString(addr, -1, type_s))          
+        return str(idc.GetString(addr, -1, type_s))
+    
+    def clear_comments(self, start_func, func_obj):
+        idaapi.set_func_cmt(func_obj, '', 1)
+        idaapi.set_func_cmt(func_obj, '', 0)
+        
 
     def get_strings_per_function(self, start_func):
         strings = []
         fs = ''
-
-        func_obj = idaapi.get_func(start_func)    
-        idaapi.set_func_cmt(func_obj, '', 1)
-        idaapi.set_func_cmt(func_obj, '', 0)  
-
-        for inst_list in idautils.Heads(start_func, idc.FindFuncEnd(start_func)):
-            xrefs = idautils.DataRefsFrom(inst_list)
-            for xref_addr in xrefs:
+        func_obj = idaapi.get_func(start_func)  
+        if func_obj:
+            self.clear_comments(start_func, func_obj)
+            for inst_list in idautils.Heads(start_func, idc.FindFuncEnd(start_func)):
                 try:
-                    string = self.get_string_type(xref_addr)
-                    if len(string) > 2:
-                        strings.append(string)
-                        self.string_counter += 1
-                    else:
-                        pass
+                    for string in [self.get_string_type(xref_addr) for xref_addr in idautils.DataRefsFrom(inst_list)]:
+                        if len(string) > 2:
+                            strings.append(string)
+                            self.string_counter += 1
+                        else:
+                            pass
                 except StringException:
                     continue
-
-        if strings:
-            for c in strings:
-                if '\n' in c:
-                    c = c.replace('\n', '')
-                fs += '"' + c + '" '
-            idaapi.set_func_cmt(func_obj, 'STR {}# {}'.format(len(strings), fs), 1)
+    
+            if strings:
+                for c in strings:
+                    if '\n' in c:
+                        c = c.replace('\n', '')
+                    fs += '"' + c + '" '
+                idaapi.set_func_cmt(func_obj, 'STR {}# {}'.format(len(strings), fs), 1)
+            
+        else:
+            print("func_obj return 0")
+            pass
+            
 
     def main(self):
         print "\n[+]Launching..."
