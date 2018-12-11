@@ -1,8 +1,9 @@
 import idc
 import idautils
 import idaapi
+from operator import truediv
 
-print "\nStringsFunctionAssociate v0.06 by partoftheworlD! Last Changes <2018-08-06 02:45:56.132000>\n"
+print "\nStringsFunctionAssociate v0.07 by partoftheworlD! Last Changes <2018-12-11 15:54:25.547000>\n"
 
 class StringException(Exception):
     pass
@@ -65,7 +66,8 @@ class Strings_fc:
         try:            
             for i in idautils.Functions():
                 self.get_strings_per_function(i)
-            print "\n[+]Well done! Added {} strings in {} functions".format(self.string_counter, idaapi.get_func_qty())
+            entropy = truediv(self.string_counter,idaapi.get_func_qty())*100
+            print "\n[+]Well done! Added {} strings in {} functions ({:.2f}%)".format(self.string_counter, idaapi.get_func_qty(), entropy)
         except KeyboardInterrupt:
             print "\n[+]Ended by user"
 
