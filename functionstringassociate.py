@@ -1,13 +1,13 @@
 import idc
 import idautils
 import idaapi
+import ida_bytes
 from operator import truediv
 
-print "\nStringsFunctionAssociate v0.07 by partoftheworlD! Last Changes <2018-12-11 15:54:25.547000>\n"
+print("\nStringsFunctionAssociate v0.08 by partoftheworlD! Last Changes <2020-12-27 15:13:51.71226>\n")
 
 class StringException(Exception):
     pass
-
 
 class Strings_fc:
     def __init__(self):
@@ -22,10 +22,11 @@ class Strings_fc:
                     "ULEN4"]
 
     def get_string_type(self, addr):
-        type_s = idc.GetStringType(addr)
-        if type_s >= len(self.string_types) or type_s < 0:
-            raise StringException()
-        return str(idc.GetString(addr, -1, type_s))
+        try:
+            type_s = idc.get_str_type(addr)
+            return str(ida_bytes.get_strlit_contents(addr, -1, type_s))
+        except TypeError:
+            raise StringException()        
     
     def clear_comments(self, start_func, func_obj):
         idaapi.set_func_cmt(func_obj, '', 1)
@@ -38,11 +39,11 @@ class Strings_fc:
         func_obj = idaapi.get_func(start_func)  
         if func_obj:
             self.clear_comments(start_func, func_obj)
-            for inst_list in idautils.Heads(start_func, idc.FindFuncEnd(start_func)):
+            for inst_list in idautils.Heads(start_func, idc.find_func_end(start_func)):
                 try:
                     for string in [self.get_string_type(xref_addr) for xref_addr in idautils.DataRefsFrom(inst_list)]:
                         if len(string) > 2:
-                            strings.append(string)
+                            strings.append(string[2:-1])
                             self.string_counter += 1
                         else:
                             pass
@@ -62,14 +63,13 @@ class Strings_fc:
             
 
     def main(self):
-        print "\n[+]Launching..."
+        print("\n[+]Launching...")
         try:            
             for i in idautils.Functions():
                 self.get_strings_per_function(i)
-            entropy = truediv(self.string_counter,idaapi.get_func_qty())*100
-            print "\n[+]Well done! Added {} strings in {} functions ({:.2f}%)".format(self.string_counter, idaapi.get_func_qty(), entropy)
+            print("\n[+]Well done! Added {} strings in {} functions".format(self.string_counter, idaapi.get_func_qty()))
         except KeyboardInterrupt:
-            print "\n[+]Ended by user"
+            print("\n[+]Ended by user")
 
 
 class StringsHandler(idaapi.action_handler_t):
@@ -95,7 +95,7 @@ class Strings_window(idaapi.plugin_t):
         try:
             self._install_plugin()
         except Exception as e:
-            form = idaapi.get_current_tform()
+            form = idaapi.get_current_widget()
             pass
         return idaapi.PLUGIN_KEEP
 
