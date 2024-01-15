@@ -51,7 +51,7 @@ class Strings_fc:
         if func_obj:
             bc = self.save_existing_comments(start_func)
             if bc is not None:
-                for string in [x for x in bc]:
+                for string in [saved_comment for saved_comment in bc]:
                     strings.append(string)
             self.clear_comments(func_obj)
             for inst_list in idautils.Heads(start_func, idc.find_func_end(start_func)):
