@@ -27,7 +27,7 @@ class Strings_fc:
         except TypeError:
             raise StringException()        
     
-    def clear_comments(self, start_func, func_obj):
+    def clear_comments(self, func_obj):
         idaapi.set_func_cmt(func_obj, '', 1)
         idaapi.set_func_cmt(func_obj, '', 0)
 
@@ -53,7 +53,7 @@ class Strings_fc:
             if bc is not None:
                 for string in [x for x in bc]:
                     strings.append(string)
-            self.clear_comments(start_func, func_obj)
+            self.clear_comments(func_obj)
             for inst_list in idautils.Heads(start_func, idc.find_func_end(start_func)):
                 try:
                     for string in [self.get_string_type(xref_addr) for xref_addr in idautils.DataRefsFrom(inst_list)]:
@@ -74,7 +74,6 @@ class Strings_fc:
             
         else:
             print("func_obj return 0")
-            pass
             
 
     def main(self):
@@ -109,9 +108,8 @@ class Strings_window(idaapi.plugin_t):
     def init(self):
         try:
             self._install_plugin()
-        except Exception as e:
+        except Exception:
             form = idaapi.get_current_widget()
-            pass
         return idaapi.PLUGIN_KEEP
 
     def _install_plugin(self):
