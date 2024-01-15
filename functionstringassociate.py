@@ -2,9 +2,8 @@ import idc
 import idautils
 import idaapi
 import ida_bytes
-from operator import truediv
 
-print("\nStringsFunctionAssociate v0.08 by partoftheworlD! Last Changes <2020-12-27 15:13:51.71226>\n")
+print("\nStringsFunctionAssociate v0.09 by partoftheworlD! Last Changes <2024-01-15 19:50:02.814613>\n")
 
 class StringException(Exception):
     pass
@@ -31,13 +30,29 @@ class Strings_fc:
     def clear_comments(self, start_func, func_obj):
         idaapi.set_func_cmt(func_obj, '', 1)
         idaapi.set_func_cmt(func_obj, '', 0)
-        
+
+    def save_existing_comments(self, start_func):
+        bc = []
+        comment = idaapi.get_func_cmt(start_func, 1)
+        if comment:
+            bc.append(comment)
+        comment = idaapi.get_func_cmt(start_func, 0)
+        if comment:
+            bc.append(comment)
+        if len(bc) > 1:
+            return bc
+        else:
+            return None
 
     def get_strings_per_function(self, start_func):
         strings = []
         fs = ''
         func_obj = idaapi.get_func(start_func)  
         if func_obj:
+            bc = self.save_existing_comments(start_func)
+            if bc is not None:
+                for string in [x for x in bc]:
+                    strings.append(string)
             self.clear_comments(start_func, func_obj)
             for inst_list in idautils.Heads(start_func, idc.find_func_end(start_func)):
                 try:
